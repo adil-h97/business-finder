@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>business-finder</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><span class="mark">business<b>finder</b></span></div>
+    <nav class="nav" id="nav">
+      <button data-view="leads">Leads <span class="count" id="navLeads"></span></button>
+      <button data-view="pipeline">Pipeline <span class="count" id="navPipe"></span></button>
+      <button data-view="discover">Discover</button>
+      <button data-view="settings">Settings</button>
+    </nav>
+    <span class="grow"></span>
+    <div class="quota" id="quota"></div>
+  </header>
+
+  <!-- ============ LEADS ============ -->
+  <section class="view" id="view-leads" hidden>
+    <div class="wrap">
+      <div class="stats" id="leadStats"></div>
+
+      <div class="toolbar">
+        <div class="search">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input type="text" id="q" placeholder="Search name, category, notes…">
+        </div>
+        <select id="fSearch"></select>
+        <select id="fStatus"></select>
+        <select id="fSort">
+          <option value="score">Best score</option>
+          <option value="review_count">Most reviews</option>
+          <option value="rating">Highest rated</option>
+          <option value="name">Name A–Z</option>
+        </select>
+        <button class="btn sm ghost" id="btnClearF" hidden>Clear filters</button>
+        <span class="spacer"></span>
+        <span class="shown" id="shown"></span>
+      </div>
+
+      <div class="facets" id="facets"></div>
+      <div id="leadsBody"></div>
+    </div>
+  </section>
+
+  <!-- ============ PIPELINE ============ -->
+  <section class="view" id="view-pipeline" hidden>
+    <div class="wrap">
+      <div class="page-hd">
+        <h1>Pipeline</h1>
+        <p>Everyone you've started working, grouped by where they stand.</p>
+      </div>
+      <div id="pipeBody"></div>
+    </div>
+  </section>
+
+  <!-- ============ DISCOVER ============ -->
+  <section class="view" id="view-discover" hidden>
+    <div class="wrap">
+      <div class="page-hd">
+        <h1>Discover leads</h1>
+        <p>Sweep an area for businesses with strong reviews and weak websites.</p>
+      </div>
+
+      <div class="card">
+        <div class="hd"><h3>1 · Where</h3>
+          <span class="sub">Check before you sweep — a bare place name often lands in the wrong country</span></div>
+        <div class="bd">
+          <div class="inline">
+            <div class="field" style="flex:1;margin:0">
+              <span class="lbl">Location</span>
+              <input type="text" id="dCity" placeholder="E15, London" list="cityList">
+              <datalist id="cityList"></datalist>
+            </div>
+            <div class="field" style="width:150px;margin:0">
+              <span class="lbl">Radius km <em>optional</em></span>
+              <input type="number" id="dRadius" placeholder="auto" min="0.5" step="0.5">
+            </div>
+            <button class="btn" id="btnGeo">Check location</button>
+          </div>
+          <div class="help" style="margin-top:7px">
+            Leave radius blank to use Google's own boundary, which varies a lot.
+            Setting one makes sweeps comparable to each other.
+          </div>
+          <div class="geo" id="geoOut" hidden></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="hd"><h3>2 · What</h3>
+          <span class="sub">One vertical per line — they share the budget</span></div>
+        <div class="bd">
+          <div class="field" style="margin:0">
+            <textarea id="dQuery" rows="4"
+              placeholder="roofer&#10;plumber&#10;electrician&#10;&#10;Leave empty to sweep every business in the area."></textarea>
+          </div>
+          <div class="presets" id="presets"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="hd"><h3>3 · Limits</h3>
+          <span class="sub">Requests are the scarce resource, not time</span></div>
+        <div class="bd">
+          <div class="row3">
+            <div class="field"><span class="lbl">Max requests</span>
+              <input type="number" id="dMax" value="40" min="1" max="1000">
+              <div class="help" id="budgetHint"></div></div>
+            <div class="field"><span class="lbl">Min rating</span>
+              <input type="number" id="dRating" value="4.0" step="0.1" min="0" max="5"></div>
+            <div class="field"><span class="lbl">Min reviews</span>
+              <input type="number" id="dReviews" value="15" min="0">
+              <div class="help">25+ filters out hobbyists</div></div>
+          </div>
+          <button class="btn primary lg block" id="btnRun">Run sweep</button>
+        </div>
+      </div>
+
+      <div class="card" id="runCard" hidden>
+        <div class="hd"><h3>Progress</h3><span class="sub" id="runPhase"></span></div>
+        <div class="bd">
+          <div class="progress"><i id="runBar" style="width:0%"></i></div>
+          <div class="console" id="runLog"></div>
+        </div>
+      </div>
+
+      <div class="card" id="cmpCard" hidden>
+        <div class="hd"><h3>Vertical comparison</h3>
+          <span class="sub">Tier-A leads per 100 requests is the number that matters</span></div>
+        <div class="bd tight"><div id="cmpBody"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section class="view" id="view-settings" hidden>
+    <div class="wrap narrow">
+      <div class="page-hd"><h1>Settings</h1></div>
+
+      <div class="card">
+        <div class="hd"><h3>Google API key</h3><span class="sub" id="keySrc"></span></div>
+        <div class="bd">
+          <div class="field"><span class="lbl">Current</span>
+            <input type="text" id="keyMask" readonly></div>
+          <div class="field"><span class="lbl">Replace with</span>
+            <input type="password" id="keyIn" placeholder="AIza…" autocomplete="off"></div>
+          <div class="inline">
+            <button class="btn primary" id="btnKeySave">Save key</button>
+            <button class="btn" id="btnKeyTest">Test key</button>
+          </div>
+          <div class="help" id="keyMsg"></div>
+          <div class="help" style="margin-top:12px">
+            Stored locally in <span class="mono">business-finder.db</span>. The app binds to
+            127.0.0.1 only, so it is not reachable from other machines.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="hd"><h3>Usage this month</h3>
+          <span class="sub">Counted by this app — not read back from Google</span></div>
+        <div class="bd"><div id="usageBody"></div>
+          <div class="help" style="margin-top:14px">
+            Google's own tally can differ if the key is used elsewhere, or when a failed
+            request still counts. Source of truth:
+            <a href="https://console.cloud.google.com/google/maps-apis/metrics" target="_blank"
+               rel="noopener noreferrer">Metrics</a> ·
+            <a href="https://console.cloud.google.com/google/maps-apis/quotas" target="_blank"
+               rel="noopener noreferrer">Quotas</a> ·
+            <a href="https://console.cloud.google.com/billing/reports" target="_blank"
+               rel="noopener noreferrer">Billing</a>.
+            Set a quota cap of <b>33/day</b> on Text Search Enterprise to guarantee £0.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="hd"><h3>Scoring</h3>
+          <span class="sub">Re-ranks instantly · costs no API requests</span></div>
+        <div class="bd"><div id="weightsBody"></div>
+          <button class="btn sm ghost" id="btnResetW" style="margin-top:12px">Reset to defaults</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="hd"><h3>Saved searches</h3>
+          <span class="sub">Removing one keeps your call notes</span></div>
+        <div class="bd tight"><div id="searchesBody"></div></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden></aside>
+<div class="toasts" id="toasts"></div>
+
+<script type="module" src="/static/js/main.js"></script>
+</body>
+</html>

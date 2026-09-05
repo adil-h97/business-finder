@@ -1,0 +1,19 @@
+# secrets and personal data — never commit
+.env
+business-finder.db
+business-finder.db-journal
+.cache/
+*.csv
+
+# local tooling
+.claude/settings.local.json
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+
+# os / editor
+.DS_Store
+*.log
+.idea/
+.vscode/
